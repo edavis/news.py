@@ -7,12 +7,17 @@ testing requirements:
 - py.test==2.3.4
 """
 
+import os
 import nntplib
 
 import utils
 
+NNTP_PORT = 119
+
 class Server(object):
-    def __init__(self, host, port, user, password):
+    def __init__(self, host=None, port=NNTP_PORT, user=None, password=None):
+        if host is None:
+            host = os.environ.get("NNTPSERVER")
         self._server = nntplib.NNTP(host, port, user, password)
 
     @property
