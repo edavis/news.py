@@ -22,6 +22,7 @@ class Server(object):
         if host is None:
             host = os.environ.get("NNTPSERVER")
         self._server = nntplib.NNTP(host, port, user, password)
+        self.last_response = self.welcome_message
 
     @property
     def welcome_message(self):
