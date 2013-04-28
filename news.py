@@ -31,6 +31,9 @@ class Server(object):
         response, groups = self._server.newgroups(date, time)
         return iter(groups)
 
+    def __repr__(self):
+        return "<Server: %s:%d>" % (self._server.host, self._server.port)
+
     def quit(self):
         return self._server.quit()
 
