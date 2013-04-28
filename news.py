@@ -43,7 +43,7 @@ class Server(object):
         return make_group_result(groups)
 
     def list(self, wildmat=None, keyword="ACTIVE"):
-        """Perform LIST command on the server.
+        """Perform a LIST command.
 
         By default, it's a "LIST ACTIVE" command but that can be
         altered by changing the `keyword` param.
