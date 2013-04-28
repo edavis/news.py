@@ -32,8 +32,6 @@ class Server(object):
         return self._server.getwelcome()
 
     def new_groups(self, since):
-        """Return an iterator of all new groups added since `since`.
-        """
         ts = utils.format_timestamp(since)
         self.last_response, groups = self._server.longcmd("NEWGROUPS %s" % ts)
         return make_group_result(groups)
