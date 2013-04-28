@@ -9,6 +9,8 @@ def format_timestamp(dt):
     if isinstance(dt, datetime.timedelta):
         now = datetime.datetime.utcnow()
         dt = now - dt
+    elif isinstance(dt, basestring):
+        return dt
     return dt.strftime("%Y%m%d %H%M%S")
 
 def split_timestamp(dt):

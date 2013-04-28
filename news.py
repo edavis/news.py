@@ -35,8 +35,11 @@ class Server(object):
         """Perform a NEWGROUPS command.
 
         :param since: Get groups created after this timestamp. Can be
-        either a datetime or timedelta object. If a timedelta,
-        subtract it from `datetime.datetime.utcnow` first.
+        either a datetime, timedelta, or string.
+
+        - If a timedelta, subtract from `utcnow` first.
+        - If a datetime, format and return.
+        - If a string, return as-is.
         """
         ts = utils.format_timestamp(since)
         self.last_response, groups = self._server.longcmd("NEWGROUPS %s" % ts)
