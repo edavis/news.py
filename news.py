@@ -88,6 +88,7 @@ class Server(object):
         return "<Server: '%s:%d'>" % (self.host, self.port)
 
     def quit(self):
+        """Send a QUIT command."""
         return self._server.quit()
 
 class Group(object):
