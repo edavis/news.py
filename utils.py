@@ -1,7 +1,12 @@
 import datetime
 
-def format_timestamp(obj):
-    if isinstance(obj, datetime.timedelta):
+def format_timestamp(dt):
+    """Given a UTC datetime object, format as 'yyyymmdd hhmmss'.
+
+    If the supplied object is a timedelta, subtract it from the
+    current UTC datetime.
+    """
+    if isinstance(dt, datetime.timedelta):
         now = datetime.datetime.utcnow()
-        obj = now - obj
-    return obj.strftime("%Y%m%d %H%M%S")
+        dt = now - dt
+    return dt.strftime("%Y%m%d %H%M%S")
