@@ -31,7 +31,13 @@ class Server(object):
     def welcome_message(self):
         return self._server.getwelcome()
 
-    def new_groups(self, since):
+    def newgroups(self, since):
+        """Perform a NEWGROUPS command.
+
+        :param since: Get groups created after this timestamp. Can be
+        either a datetime or timedelta object. If a timedelta,
+        subtract it from `datetime.datetime.utcnow` first.
+        """
         ts = utils.format_timestamp(since)
         self.last_response, groups = self._server.longcmd("NEWGROUPS %s" % ts)
         return make_group_result(groups)
