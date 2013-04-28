@@ -17,13 +17,13 @@ def make_group_result(groups):
     return map(GroupResult._make, (group.split() for group in groups))
 
 class Server(object):
-    """Represents a NNTP server.
+    """Represents a given NNTP server.
 
-    :param str host: Hostname of the NNTP server. If not supplied,
+    :param host: Hostname of the NNTP server. If not supplied,
       the :envvar:`NNTPSERVER` environment variable is used instead.
-    :param int port: Port of the NNTP server. Defaults to 119.
-    :param str user: Username to authenticate with.
-    :param str password: Password to authenticate with.
+    :param port: Port of the NNTP server. Defaults to 119.
+    :param user: Username to authenticate with.
+    :param password: Password to authenticate with.
 
     Keeping your credentials in :file:`~/.netrc` also works. Just
     leave user/password blank.
@@ -46,15 +46,15 @@ class Server(object):
     def newgroups(self, since):
         """Send a `NEWGROUPS`_ command.
 
-        Return a list of newsgroups created on the server since
+        Returns a list of newsgroups created on the server since
         ``since`` timestamp.
 
         ``since`` can be a :class:`~datetime.datetime`,
-        :class:`~datetime.timedelta`, or :func:`str`. If a
+        :class:`~datetime.timedelta`, or :func:`str`. If it's a
         :class:`~datetime.timedelta`, it is subtracted from
         :meth:`datetime.datetime.utcnow` first.
 
-        Here are the valid ways to provide ``since``::
+        For example::
 
             >>> from datetime import datetime, timedelta
 
@@ -84,9 +84,7 @@ class Server(object):
         :param str keyword: A `list keyword`_.
 
         The most common use of LIST is to retrieve a list of
-        newsgroups.
-
-        To retrieve all newsgroups::
+        newsgroups::
 
             >>> server.list()
             [Group(name='misc.test', high='3002322', low='3000234', status='y'), ...]
@@ -96,8 +94,8 @@ class Server(object):
             >>> server.list("tx.*")
             [Group(name='tx.natives.recovery', high='89', low='56', status='y'), ...]
 
-        ``Group`` is a :func:`~collections.namedtuple`. The attributes
-        and what they represent are defined `here
+        ``Group`` is a :func:`~collections.namedtuple` with the
+        attributes defined `here
         <http://tools.ietf.org/html/rfc3977#section-6.1.1.1>`_ (under
         "parameters").
 
@@ -125,13 +123,11 @@ class Server(object):
     def group(self, name):
         """Send a `GROUP`_ command.
 
-        :param str name: Name of the newsgroup
-
         Returns a :class:`Group` object::
 
             >>> group = server.group("comp.lang.python")
 
-        Also sets the given group as the active one.
+        Also sets the given group as :attr:`the current one <current_group>`.
 
         .. _GROUP: http://tools.ietf.org/html/rfc3977#section-6.1.1
         """
