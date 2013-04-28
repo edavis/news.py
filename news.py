@@ -36,6 +36,43 @@ class Server(object):
         self.last_response, groups = self._server.longcmd("NEWGROUPS %s" % ts)
         return make_group_result(groups)
 
+    def list(self, wildmat=None, keyword="ACTIVE"):
+        """Perform LIST command on the server.
+
+        By default, it's a "LIST ACTIVE" command but that can be
+        altered by changing the `keyword` param.
+
+        The first argument is a wildmat pattern. It can be left empty.
+
+        To get all groups on the server:
+
+            >>> server.list() # -> LIST ACTIVE
+            [Group(name='misc.test', high='3002322', low='3000234', status='y'), ...]
+
+        To get only some groups on the server, pass a wildmat string:
+
+            >>> server.list("tx.*") # -> LIST ACTIVE tx.*
+            [Group(name='tx.natives.recovery', high='89', low='56', status='y'), ...]
+
+        (http://tools.ietf.org/html/rfc3977#section-4 has more on this format)
+
+        All standard LIST keywords
+        (http://tools.ietf.org/html/rfc3977#section-7.6.2) are
+        supported, just pass them in via 'keyword':
+
+            >>> server.list(keyword="OVERVIEW.FMT") # LIST OVERVIEW.FMT
+            ['Subject:', 'From:', ..., 'Xref:full']
+        """
+        cmd = "LIST %s" % keyword
+        if wildmat is not None:
+            cmd += " " + wildmat
+        self.last_response, lines = self._server.longcmd(cmd)
+
+        if wildmat is not None:
+            return make_group_result(lines)
+        else:
+            return [line.strip() for line in lines]
+
     def __repr__(self):
         return "<Server: %s:%d>" % (self._server.host, self._server.port)
 
