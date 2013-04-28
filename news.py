@@ -26,6 +26,8 @@ class Server(object):
             host = os.environ.get("NNTPSERVER")
         self._server = nntplib.NNTP(host, port, user, password)
         self.last_response = self.welcome_message
+        self.host = host
+        self.port = port
 
     @property
     def welcome_message(self):
@@ -83,7 +85,7 @@ class Server(object):
             return [line.strip() for line in lines]
 
     def __repr__(self):
-        return "<Server: %s:%d>" % (self._server.host, self._server.port)
+        return "<Server: '%s:%d'>" % (self.host, self.port)
 
     def quit(self):
         return self._server.quit()
