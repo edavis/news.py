@@ -1,10 +1,5 @@
 """
 news.py -- NNTP for humans
-
-requirements:
-
-testing requirements:
-- py.test==2.3.4
 """
 
 import os
