@@ -10,3 +10,9 @@ def format_timestamp(dt):
         now = datetime.datetime.utcnow()
         dt = now - dt
     return dt.strftime("%Y%m%d %H%M%S")
+
+def split_timestamp(dt):
+    """Return a (date, time) tuple of a formatted timestamp.
+    """
+    return tuple(format_timestamp(dt).split(" "))
+
