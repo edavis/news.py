@@ -9,10 +9,13 @@ testing requirements:
 
 import os
 import nntplib
+import collections
 
 import utils
 
 NNTP_PORT = 119
+
+GroupResult = collections.namedtuple("Group", "name, high, low, status")
 
 class Server(object):
     def __init__(self, host=None, port=NNTP_PORT, user=None, password=None):
@@ -29,7 +32,7 @@ class Server(object):
         """
         (date, time) = utils.split_timestamp(since)
         response, groups = self._server.newgroups(date, time)
-        return iter(groups)
+        return map(GroupResult._make, (group.split() for group in groups))
 
     def __repr__(self):
         return "<Server: %s:%d>" % (self._server.host, self._server.port)
