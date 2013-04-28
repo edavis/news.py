@@ -30,8 +30,8 @@ class Server(object):
     def new_groups(self, since):
         """Return an iterator of all new groups added since `since`.
         """
-        (date, time) = utils.split_timestamp(since)
-        response, groups = self._server.newgroups(date, time)
+        ts = utils.format_timestamp(since)
+        self.last_response, groups = self._server.longcmd("NEWGROUPS %s" % ts)
         return map(GroupResult._make, (group.split() for group in groups))
 
     def __repr__(self):
