@@ -13,6 +13,8 @@ API documentation
 
    .. automethod:: quit
 
+   Each server instance also has the following attributes:
+
    .. attribute:: last_response
 
       Contains the last response returned from the server.
