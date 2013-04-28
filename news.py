@@ -17,6 +17,9 @@ NNTP_PORT = 119
 
 GroupResult = collections.namedtuple("Group", "name, high, low, status")
 
+def make_group_result(groups):
+    return map(GroupResult._make, (group.split() for group in groups))
+
 class Server(object):
     def __init__(self, host=None, port=NNTP_PORT, user=None, password=None):
         if host is None:
@@ -33,7 +36,7 @@ class Server(object):
         """
         ts = utils.format_timestamp(since)
         self.last_response, groups = self._server.longcmd("NEWGROUPS %s" % ts)
-        return map(GroupResult._make, (group.split() for group in groups))
+        return make_group_result(groups)
 
     def __repr__(self):
         return "<Server: %s:%d>" % (self._server.host, self._server.port)
