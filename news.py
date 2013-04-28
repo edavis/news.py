@@ -17,6 +17,17 @@ def make_group_result(groups):
     return map(GroupResult._make, (group.split() for group in groups))
 
 class Server(object):
+    """Represents a NNTP server.
+
+    :param str host: Hostname of the NNTP server. If not supplied,
+      the :envvar:`NNTPSERVER` environment variable is used instead.
+    :param int port: Port of the NNTP server. Defaults to 119.
+    :param str user: Username to authenticate with.
+    :param str password: Password to authenticate with.
+
+    Keeping your credentials in :file:`~/.netrc` also works. Just
+    leave user/password blank.
+    """
     def __init__(self, host=None, port=NNTP_PORT, user=None, password=None):
         if host is None:
             host = os.environ.get("NNTPSERVER")
@@ -28,48 +39,78 @@ class Server(object):
 
     @property
     def welcome_message(self):
+        """Welcome message returned after first connecting to the server.
+        """
         return self._server.getwelcome()
 
     def newgroups(self, since):
-        """Perform a NEWGROUPS command.
+        """Send a `NEWGROUPS`_ command.
 
-        :param since: Get groups created after this timestamp. Can be
-        either a datetime, timedelta, or string.
+        Return a list of newsgroups created on the server since
+        ``since`` timestamp.
 
-        - If a timedelta, subtract from `utcnow` first.
-        - If a datetime, format and return.
-        - If a string, return as-is.
+        ``since`` can be a :class:`~datetime.datetime`,
+        :class:`~datetime.timedelta`, or :func:`str`. If a
+        :class:`~datetime.timedelta`, it is subtracted from
+        :meth:`datetime.datetime.utcnow` first.
+
+        Here are the valid ways to provide ``since``::
+
+            >>> from datetime import datetime, timedelta
+
+            >>> server.newgroups(datetime(2012, 12, 01))
+            [Group(name='misc.test', high='3002322', low='3000234', status='y'), ...]
+
+            >>> server.newgroups(timedelta(days=120))
+            [Group(name='misc.test', high='3002322', low='3000234', status='y'), ...]
+
+            >>> server.newgroups('121201 000000')
+            [Group(name='misc.test', high='3002322', low='3000234', status='y'), ...]
+
+        ``Group`` is the same :func:`~collections.namedtuple` as
+        returned in :meth:`list`.
+
+        .. _NEWGROUPS: http://tools.ietf.org/html/rfc3977#section-7.3
+
         """
         ts = utils.format_timestamp(since)
         self.last_response, groups = self._server.longcmd("NEWGROUPS %s" % ts)
         return make_group_result(groups)
 
     def list(self, wildmat=None, keyword="ACTIVE"):
-        """Perform a LIST command.
+        """Send a `LIST`_ command.
 
-        By default, it's a "LIST ACTIVE" command but that can be
-        altered by changing the `keyword` param.
+        :param str wildmat: A `wildmat pattern`_.
+        :param str keyword: A `list keyword`_.
 
-        The first argument is a wildmat pattern. It can be left empty.
+        The most common use of LIST is to retrieve a list of
+        newsgroups.
 
-        To get all groups on the server:
+        To retrieve all newsgroups::
 
-            >>> server.list() # -> LIST ACTIVE
+            >>> server.list()
             [Group(name='misc.test', high='3002322', low='3000234', status='y'), ...]
 
-        To get only some groups on the server, pass a wildmat string:
+        To retrieve only some groups, provide a `wildmat pattern`_::
 
-            >>> server.list("tx.*") # -> LIST ACTIVE tx.*
+            >>> server.list("tx.*")
             [Group(name='tx.natives.recovery', high='89', low='56', status='y'), ...]
 
-        (http://tools.ietf.org/html/rfc3977#section-4 has more on this format)
+        ``Group`` is a :func:`~collections.namedtuple`. The attributes
+        and what they represent are defined `here
+        <http://tools.ietf.org/html/rfc3977#section-6.1.1.1>`_ (under
+        "parameters").
 
-        All standard LIST keywords
-        (http://tools.ietf.org/html/rfc3977#section-7.6.2) are
-        supported, just pass them in via 'keyword':
+        LIST is also able to supply other kinds of information. All
+        you have to do is supply a valid `list keyword`_::
 
-            >>> server.list(keyword="OVERVIEW.FMT") # LIST OVERVIEW.FMT
+            >>> server.list(keyword="OVERVIEW.FMT")
             ['Subject:', 'From:', ..., 'Xref:full']
+
+        .. _LIST:              http://tools.ietf.org/html/rfc3977#section-7.6
+        .. _`wildmat pattern`: http://tools.ietf.org/html/rfc3977#section-4
+        .. _`list keywords`:
+        .. _`list keyword`:    http://tools.ietf.org/html/rfc3977#section-7.6.2
         """
         cmd = "LIST %s" % keyword
         if wildmat is not None:
@@ -82,9 +123,17 @@ class Server(object):
             return [line.strip() for line in lines]
 
     def group(self, name):
-        """Send a GROUP command.
+        """Send a `GROUP`_ command.
 
-        Selects the active group.
+        :param str name: Name of the newsgroup
+
+        Returns a :class:`Group` object::
+
+            >>> group = server.group("comp.lang.python")
+
+        Also sets the given group as the active one.
+
+        .. _GROUP: http://tools.ietf.org/html/rfc3977#section-6.1.1
         """
         self.last_response = self._server.shortcmd("GROUP %s" % name)
         (_, count, low, high, name) = self.last_response.split()
@@ -97,7 +146,12 @@ class Server(object):
         return "<Server: '%s:%d'>" % (self.host, self.port)
 
     def quit(self):
-        """Send a QUIT command."""
+        """Send a `QUIT`_ command.
+
+        Closes the server connection.
+
+        .. _QUIT: http://tools.ietf.org/html/rfc3977#section-5.4
+        """
         return self._server.quit()
 
 class Group(object):
