@@ -1,6 +1,10 @@
 news.py -- NNTP for humans
 ==========================
 
+A modern Python library for working with NNTP_:
+
+.. _NNTP: http://en.wikipedia.org/wiki/Network_News_Transfer_Protocol
+
 .. code-block:: python
 
    >>> import news
