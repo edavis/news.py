@@ -5,7 +5,7 @@ news.py -- NNTP for humans
 import os
 import nntplib
 import collections
-from email.parser import HeaderParser
+from email.parser import Parser
 
 import utils
 
@@ -17,17 +17,6 @@ def make_group_result(groups):
     return map(GroupResult._make, (group.split() for group in groups))
 
 class Server(object):
-    """Represents a given NNTP server.
-
-    :param host: Hostname of the NNTP server. If not supplied,
-      the :envvar:`NNTPSERVER` environment variable is used instead.
-    :param port: Port of the NNTP server. Defaults to 119.
-    :param user: Username to authenticate with.
-    :param password: Password to authenticate with.
-
-    Keeping your credentials in :file:`~/.netrc` also works. Just
-    leave user/password blank.
-    """
     def __init__(self, host=None, port=NNTP_PORT, user=None, password=None):
         if host is None:
             host = os.environ.get("NNTPSERVER")
@@ -39,76 +28,30 @@ class Server(object):
 
     @property
     def welcome_message(self):
-        """Welcome message returned after first connecting to the server.
+        """The server's initial welcome message.
         """
         return self._server.getwelcome()
 
     def newgroups(self, since):
-        """Send a `NEWGROUPS`_ command.
+        """Send a NEWGROUPS command.
 
-        Returns a list of newsgroups created on the server since
-        ``since`` timestamp.
+        Get all newsgroups created after ``since``.
 
-        ``since`` can be a :class:`~datetime.datetime`,
-        :class:`~datetime.timedelta`, or :func:`str`. If it's a
-        :class:`~datetime.timedelta`, it is subtracted from
-        :meth:`datetime.datetime.utcnow` first.
+        ``since`` can be a datetime, timedelta, or pre-formatted
+        string (e.g., 'yymmdd hhmmss').
 
-        For example::
-
-            >>> from datetime import datetime, timedelta
-
-            >>> server.newgroups(datetime(2012, 12, 01))
-            [Group(name='misc.test', high='3002322', low='3000234', status='y'), ...]
-
-            >>> server.newgroups(timedelta(days=120))
-            [Group(name='misc.test', high='3002322', low='3000234', status='y'), ...]
-
-            >>> server.newgroups('121201 000000')
-            [Group(name='misc.test', high='3002322', low='3000234', status='y'), ...]
-
-        ``Group`` is the same :func:`~collections.namedtuple` as
-        returned in :meth:`list`.
-
-        .. _NEWGROUPS: http://tools.ietf.org/html/rfc3977#section-7.3
-
+        If it's a timedelta, subtract from datetime.utcnow first.
         """
         ts = utils.format_timestamp(since)
         self.last_response, groups = self._server.longcmd("NEWGROUPS %s" % ts)
         return make_group_result(groups)
 
     def list(self, wildmat=None, keyword="ACTIVE"):
-        """Send a `LIST`_ command.
+        """Send a LIST command.
 
-        :param str wildmat: A `wildmat pattern`_.
-        :param str keyword: A `list keyword`_.
-
-        The most common use of LIST is to retrieve a list of
-        newsgroups::
-
-            >>> server.list()
-            [Group(name='misc.test', high='3002322', low='3000234', status='y'), ...]
-
-        To retrieve only some groups, provide a `wildmat pattern`_::
-
-            >>> server.list("tx.*")
-            [Group(name='tx.natives.recovery', high='89', low='56', status='y'), ...]
-
-        ``Group`` is a :func:`~collections.namedtuple` with the
-        attributes defined `here
-        <http://tools.ietf.org/html/rfc3977#section-6.1.1.1>`_ (under
-        "parameters").
-
-        LIST is also able to supply other kinds of information. All
-        you have to do is supply a valid `list keyword`_::
-
-            >>> server.list(keyword="OVERVIEW.FMT")
-            ['Subject:', 'From:', ..., 'Xref:full']
-
-        .. _LIST:              http://tools.ietf.org/html/rfc3977#section-7.6
-        .. _`wildmat pattern`: http://tools.ietf.org/html/rfc3977#section-4
-        .. _`list keywords`:
-        .. _`list keyword`:    http://tools.ietf.org/html/rfc3977#section-7.6.2
+        :param str wildmat: wildmat pattern to limit the groups returned
+        :param str keyword: which LIST variant to use
+        :returns: a list of GroupResult namedtuples
         """
         cmd = "LIST %s" % keyword
         if wildmat is not None:
@@ -121,15 +64,9 @@ class Server(object):
             return [line.strip() for line in lines]
 
     def group(self, name):
-        """Send a `GROUP`_ command.
+        """Send a GROUP command.
 
-        Returns a :class:`Group` object::
-
-            >>> group = server.group("comp.lang.python")
-
-        Also sets the given group as :attr:`the current one <current_group>`.
-
-        .. _GROUP: http://tools.ietf.org/html/rfc3977#section-6.1.1
+        Returns a Group object and sets it as this server's current_group.
         """
         self.last_response = self._server.shortcmd("GROUP %s" % name)
         (_, count, low, high, name) = self.last_response.split()
@@ -142,11 +79,9 @@ class Server(object):
         return "<Server: '%s:%d'>" % (self.host, self.port)
 
     def quit(self):
-        """Send a `QUIT`_ command.
+        """Send a QUIT command.
 
         Closes the server connection.
-
-        .. _QUIT: http://tools.ietf.org/html/rfc3977#section-5.4
         """
         return self._server.quit()
 
@@ -169,12 +104,15 @@ class Group(object):
             return Article(body=results)
 
     def head(self, msg_id):
+        """Get an article's headers."""
         return self._get("HEAD", msg_id)
 
     def body(self, msg_id):
+        """Get an article's body."""
         return self._get("BODY", msg_id)
 
     def article(self, msg_id):
+        """Get both an article's headers and it's body."""
         response, result = self._server.longcmd("ARTICLE %s" % str(msg_id))
         combined = "\n".join(result)
         (headers, body) = combined.split("\n\n", 1)
@@ -190,7 +128,7 @@ class Article(object):
         self.body = body
 
         if headers is not None:
-            parser = HeaderParser()
+            parser = Parser()
             headers = self._join_if_needed(headers)
             self.headers = parser.parsestr(headers, headersonly=True)
 
